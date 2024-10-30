@@ -27,6 +27,8 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
             if (messageText.equals("/start")) {
                 sendMessage(chatId, "Привет! Я ваш помощник по задачам. Напишите /help для списка команд.");
+            } else if (messageText.equals("/help")) {
+                sendHelpMessage(chatId);
             } else if (messageText.equals("/addtask")) {
                 sendMessage(chatId, "Введите текст новой задачи в формате 'Задача: описание задачи'");
             } else if (messageText.startsWith("Задача: ")) {
@@ -42,8 +44,27 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 } catch (NumberFormatException e) {
                     sendMessage(chatId, "Неверный формат ID задачи. Пожалуйста, укажите числовой ID.");
                 }
+            } else if (messageText.startsWith("/completetask ")) {
+                String idStr = messageText.replace("/completetask ", "").trim();
+                try {
+                    int taskId = Integer.parseInt(idStr);
+                    completeTask(chatId, taskId);
+                } catch (NumberFormatException e) {
+                    sendMessage(chatId, "Неверный формат ID задачи. Пожалуйста, укажите числовой ID.");
+                }
             }
         }
+    }
+
+    private void sendHelpMessage(long chatId) {
+        String helpMessage = "Список команд:\n" +
+                "/start - Начать работу с ботом\n" +
+                "/help - Показать справку по командам\n" +
+                "/addtask - Добавить новую задачу\n" +
+                "/viewtasks - Показать список задач\n" +
+                "/deletetask <ID> - Удалить задачу по ID\n" +
+                "/completetask <ID> - Отметить задачу как завершенную по ID";
+        sendMessage(chatId, helpMessage);
     }
 
     private void addTask(long chatId, String taskText) {
@@ -74,6 +95,16 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             sendMessage(chatId, "Задача с ID " + taskId + " успешно удалена.");
         } else {
             sendMessage(chatId, "Задача с ID " + taskId + " не найдена.");
+        }
+    }
+
+    private void completeTask(long chatId, int taskId) {
+        DatabaseManager dbManager = new DatabaseManager();
+        boolean success = dbManager.completeTask(taskId, chatId);
+        if (success) {
+            sendMessage(chatId, "Задача с ID " + taskId + " успешно завершена.");
+        } else {
+            sendMessage(chatId, "Задача с ID " + taskId + " не найдена или уже завершена.");
         }
     }
 

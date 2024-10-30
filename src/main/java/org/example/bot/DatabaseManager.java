@@ -11,6 +11,7 @@ public class DatabaseManager {
         createTasksTable();
     }
 
+    // Метод для создания таблицы задач, если ее нет в базе данных
     private void createTasksTable() {
         try (Connection conn = DriverManager.getConnection(DB_URL);
              PreparedStatement stmt = conn.prepareStatement(
@@ -26,6 +27,7 @@ public class DatabaseManager {
         }
     }
 
+    // Метод для добавления новой задачи в базу данных
     public void addTask(long userId, String taskText) {
         try (Connection conn = DriverManager.getConnection(DB_URL);
              PreparedStatement stmt = conn.prepareStatement(
@@ -39,6 +41,7 @@ public class DatabaseManager {
         }
     }
 
+    // Метод для получения списка активных задач пользователя
     public List<String> getUserTasks(long userId) {
         List<String> tasks = new ArrayList<>();
         String query = "SELECT id, task_text FROM tasks WHERE user_id = ? AND status = 'pending'";
@@ -60,8 +63,24 @@ public class DatabaseManager {
         return tasks;
     }
 
+    // Метод для удаления задачи по ID задачи и ID пользователя
     public boolean deleteTask(int taskId, long userId) {
         String query = "DELETE FROM tasks WHERE id = ? AND user_id = ?";
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setInt(1, taskId);
+            stmt.setLong(2, userId);
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // Метод для завершения задачи, обновляет статус на "completed"
+    public boolean completeTask(int taskId, long userId) {
+        String query = "UPDATE tasks SET status = 'completed' WHERE id = ? AND user_id = ? AND status = 'pending'";
         try (Connection conn = DriverManager.getConnection(DB_URL);
              PreparedStatement stmt = conn.prepareStatement(query)) {
             stmt.setInt(1, taskId);
