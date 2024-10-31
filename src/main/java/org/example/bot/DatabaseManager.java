@@ -11,7 +11,7 @@ public class DatabaseManager {
         createTasksTable();
     }
 
-    // Метод для создания таблицы задач, если ее нет в базе данных
+    // Метод для создания таблицы задач, если ее еще нет в базе данных
     private void createTasksTable() {
         try (Connection conn = DriverManager.getConnection(DB_URL);
              PreparedStatement stmt = conn.prepareStatement(
@@ -45,6 +45,28 @@ public class DatabaseManager {
     public List<String> getUserTasks(long userId) {
         List<String> tasks = new ArrayList<>();
         String query = "SELECT id, task_text FROM tasks WHERE user_id = ? AND status = 'pending'";
+
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setLong(1, userId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    int id = rs.getInt("id");
+                    String taskText = rs.getString("task_text");
+                    tasks.add(id + ": " + taskText);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tasks;
+    }
+
+    // Метод для получения списка завершенных задач пользователя
+    public List<String> getCompletedTasks(long userId) {
+        List<String> tasks = new ArrayList<>();
+        String query = "SELECT id, task_text FROM tasks WHERE user_id = ? AND status = 'completed'";
 
         try (Connection conn = DriverManager.getConnection(DB_URL);
              PreparedStatement stmt = conn.prepareStatement(query)) {
